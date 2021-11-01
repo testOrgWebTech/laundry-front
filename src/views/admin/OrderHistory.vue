@@ -1,44 +1,26 @@
 <template>
   <el-card class="box-content">
     <el-table
-      :data="orders.filter((data) => (!search || data.id.includes(search)) && data.status != 'finish')"
+      :data="
+        orders.filter(
+          (data) =>
+            (!search || data.id.includes(search)) && data.status == 'finish'
+        )
+      "
       style="width: 100%"
       v-if="orders"
       ref="filterTable"
     >
       <el-table-column label="รหัสรายการ" prop="id"> </el-table-column>
       <el-table-column label="รหัสลูกค้า" prop="user_id"> </el-table-column>
-      <el-table-column label="ราคา" prop="price"> </el-table-column>
-      <el-table-column label="เวลาที่อัพเดท" prop="updated_at">
+      <el-table-column label="ชื่อลูกค้า" prop="user.first_name">
       </el-table-column>
-      <el-table-column
-        prop="status"
-        label="สถานะ"
-        width="100"
-        :filters="status"
-        :filter-method="filterStatus"
-        filter-placement="bottom-end"
-      >
-        <template slot-scope="scope">
-          <el-tag
-            :type="scope.row.status === 'finish' ? 'success' : 'primary'"
-            disable-transitions
-            >{{ scope.row.status }}</el-tag
-          >
-        </template></el-table-column
-      >
+      <el-table-column label="เวลาที่เสร็จสิ้น" prop="finish_time">
+      </el-table-column>
+      <el-table-column label="ราคา" prop="price"> </el-table-column>
       <el-table-column align="right">
         <template slot="header">
           <el-input v-model="search" size="mini" placeholder="ค้นหาด้วย ID" />
-        </template>
-        <template slot-scope="scope">
-          <el-button size="mini">ดูข้อมูล</el-button>
-          <el-button
-            size="mini"
-            v-if="!['waitPayment', 'finish'].includes(scope.row.status)"
-            @click="updateStatus(scope.$index, scope.row)"
-            >อัพเดทสถานะ</el-button
-          >
         </template>
       </el-table-column>
     </el-table>
@@ -59,6 +41,7 @@ export default {
         { text: "ยืนยันรายการ รอผ้ามาส่ง", value: "waitClothes" },
         { text: "รอดำเนินการ", value: "waitQuene" },
         { text: "ดำเนินการ", value: "inProcess" },
+        { text: "เสร็จสิ้น", value: "finish" },
       ],
     };
   },

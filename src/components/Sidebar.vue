@@ -5,58 +5,71 @@
     </div>
 
     <el-menu class="el-menu-vertical-demo" :popper-append-to-body="false">
-      <el-menu-item index="1" @click="changeRounter('order-list')">
+      <el-menu-item
+        index="1"
+        @click="changeRounter('admin-order-list')"
+        v-if="user.role == 'owner'"
+      >
         <i class="el-icon-document" style="color: black"></i>
-        <span slot="title">รายการซักผ้าทั้งหมด</span>
+        <span slot="title">รายการซักผ้าที่กำลังดำเนินการ</span>
       </el-menu-item>
 
-      <el-menu-item index="2" @click="changeRounter('customer-list')">
+      <el-menu-item
+        index="2"
+        @click="changeRounter('order-history')"
+        v-if="user.role == 'owner'"
+      >
+        <i class="el-icon-document" style="color: black"></i>
+        <span slot="title">ประวัติรายการซักผ้า</span>
+      </el-menu-item>
+
+      <el-menu-item
+        index="3"
+        @click="changeRounter('customer-list')"
+        v-if="user.role == 'owner'"
+      >
         <i class="el-icon-document" style="color: black"></i>
         <span slot="title">รายชื่อลูกค้า</span>
       </el-menu-item>
 
-      <!--<el-menu-item index="5" :disabled="isDisabled" @click="changeRounter('leaderboard')" v-if="userRole == 'Admin'">
-                <i class="el-icon-medal-1" style="color:black"></i>
-                <span slot="title">กระดานคะแนน</span>
-            </el-menu-item>
-            <el-menu-item index="6" @click="changeRounter('rewards/manage')" v-if="userRole == 'Admin'" :disabled="isDisabled">
-                <i class="el-icon-setting" style="color:black"></i>
-                <span slot="title">จัดการรางวัล</span>
-            </el-menu-item>
-            <el-menu-item index="7" @click="changeRounter('users/manage')" v-if="userRole == 'Admin'" :disabled="isDisabled">
-                <i class="el-icon-setting" style="color:black"></i>
-                <span slot="title">จัดการผู้ใช้งาน</span>
-            </el-menu-item>
-            <el-menu-item index="8" @click="changeRounter('users/create')" v-if="userRole == 'Admin'" :disabled="isDisabled">
-                <i class="el-icon-setting" style="color:black"></i>
-                <span slot="title">เพิ่มผู้ใช้งาน</span>
-            </el-menu-item>
-            <el-menu-item index="9" @click="changeRounter('RegisterSubject')" v-if="userRole == 'Admin'" :disabled="isDisabled">
-                <i class="el-icon-circle-plus-outline" style="color:black"></i>
-                <span slot="title">เพิ่มวิชาให้นักเรียน</span>
-            </el-menu-item>
-            <el-menu-item index="10" @click="logout">
-                <i class="el-icon-switch-button" style="color:black"></i>
-                <span slot="title">ออกจากระบบ</span>
-            </el-menu-item>-->
+      <el-menu-item
+        index="4"
+        @click="changeRounter('create-order')"
+        v-if="user.role == 'customer'"
+      >
+        <i class="el-icon-document" style="color: black"></i>
+        <span slot="title">สร้างรายการซักผ้า</span>
+      </el-menu-item>
+
+      <el-menu-item
+        index="5"
+        @click="changeRounter('customer-order-list')"
+        v-if="user.role == 'customer'"
+      >
+        <i class="el-icon-document" style="color: black"></i>
+        <span slot="title">รายการซักผ้า</span>
+      </el-menu-item>
+
+      <el-menu-item index="4" @click="logout">
+        <i class="el-icon-switch-button" style="color: black"></i>
+        <span slot="title">ออกจากระบบ</span>
+      </el-menu-item>
     </el-menu>
   </div>
 </template>
 
 <script>
-//import AuthUser from '@/store/AuthUser'
+import authStore from "@/store/auth.store";
 
 export default {
   data() {
     return {
-      /*isDisabled: false,
-      userRole: JSON.parse(localStorage.getItem("auth_key")).user.role.name,
-      user: AuthUser.getters.user,*/
+      user: JSON.parse(window.localStorage.getItem("authUser")),
     };
   },
   methods: {
     async logout() {
-      await AuthUser.dispatch("logout");
+      await authStore.dispatch("logout");
       this.$confirm("ออกจากระบบ", "", {
         confirmButtonText: "ตกลง",
         cancelButtonText: "ยกเลิก",

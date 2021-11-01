@@ -4,7 +4,7 @@
       :data="
         customers.filter(
           (data) =>
-            (!search || data.id.includes(search)) && data.role == 'Customer'
+            (!search || data.id.includes(search)) && data.role == 'customer'
         )
       "
       style="width: 100%"

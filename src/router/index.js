@@ -4,10 +4,10 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import CustomerList from '../views/admin/CustomerList.vue'
-import OrderList from '../views/admin/OrderList.vue'
-import PaymentList from '../views/admin/PaymentList.vue'
-import PromotionList from '../views/admin/PromotionList.vue'
+import AdminOrderList from '../views/admin/OrderList.vue'
+import OrderHistory from '../views/admin/OrderHistory.vue'
 import CreateOrder from '../views/customer/CreateOrder.vue'
+import CustomerOrderList from '../views/customer/OrderList.vue'
 
 Vue.use(VueRouter)
 
@@ -33,30 +33,25 @@ const routes = [
     component: CustomerList
   },
   {
-    path: '/order-list',
-    name: 'OrderList',
-    component: OrderList
+    path: '/admin-order-list',
+    name: 'AdminOrderList',
+    component: AdminOrderList
   },
   {
-    path: '/payment-list',
-    name: 'PaymentList',
-    component: PaymentList
-  },
-  {
-    path: '/promotion-list',
-    name: 'PromotionList',
-    component: PromotionList
+    path: '/order-history',
+    name: 'OrderHistory',
+    component: OrderHistory
   },
   {
     path: '/create-order',
     name: 'CreateOrder',
     component: CreateOrder
   },
-  /*{
-    path: '/show-order',
-    name: 'ShowOrder',
-    component: ShowOrder
-  },*/
+  {
+    path: '/customer-order-list',
+    name: 'CustomerOrderList',
+    component: CustomerOrderList
+  },
 ]
 
 const router = new VueRouter({

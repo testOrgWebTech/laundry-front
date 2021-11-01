@@ -12,9 +12,11 @@ export default class {
         };
         this.mutations = {
             setList(state, res) {
-                console.log(res)
                 state.list = res.data;
             },
+            addItem(state, res) {
+                state.list.push(res.data);
+            }
             /*getOne(state, res) {
                 state.list
             },
@@ -32,18 +34,24 @@ export default class {
             async get({ commit }) {
                 const res = await axios.get(apiUrl + `${baseUrl}`, /*header*/);
                 commit("setList", res);
+                return res;
             },
             async getOne({ commit }) {
                 const res = axios.get(apiUrl + `${baseUrl}/id`, /*header*/);
             },
-            async save({ commit }) {
-                const res = axios.post(apiUrl + `${baseUrl}`, /*header*/);
+            async save({ commit }, payload) {
+                const res = axios.post(apiUrl + `${baseUrl}`, payload,/*header*/);
+                commit("addItem", res);
+                return res;
             },
-            async update({ commit }) {
-                const res = axios.put(apiUrl + `${baseUrl}/id`, /*header*/);
+            async update({ commit }, payload) {
+                const res = axios.put(apiUrl + `${baseUrl}/${payload.id}`, payload, /*header*/);
+                commit("setList", res);
+                return res;
             },
             async delete({ commit }) {
                 const res = axios.delete(apiUrl + `${baseUrl}/id`, /*header*/);
+                commit("setList", res);
             }
         };
     }

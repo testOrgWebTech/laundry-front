@@ -1,22 +1,11 @@
 <template>
   <div id="app">
-    <!--<div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>-->
-
-    <div id="admin-app">
+    <div id="main-app">
       <Sidebar v-if="!['/', '/register'].includes(this.$route.path)"/>
       <div class="content">
         <router-view />
       </div>
     </div>
-    <!--<div id="customer-app">
-      <div class="content">
-        <router-view />
-      </div>
-    </div>-->
   </div>
 </template>
 
@@ -48,7 +37,7 @@ html, body {
   width: 100%;
   height: 100%;
 }
-.admin-app {
+.app {
   width: 100%;
   height: 100%;
 }

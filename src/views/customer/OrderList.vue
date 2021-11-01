@@ -1,7 +1,12 @@
 <template>
   <el-card class="box-content">
     <el-table
-      :data="orders.filter((data) => (!search || data.id.includes(search)) && data.status != 'finish')"
+      :data="
+        orders.filter(
+          (data) =>
+            (!search || data.id.includes(search)) && data.user_id == user.id
+        )
+      "
       style="width: 100%"
       v-if="orders"
       ref="filterTable"
@@ -32,21 +37,39 @@
           <el-input v-model="search" size="mini" placeholder="ค้นหาด้วย ID" />
         </template>
         <template slot-scope="scope">
-          <el-button size="mini">ดูข้อมูล</el-button>
           <el-button
             size="mini"
-            v-if="!['waitPayment', 'finish'].includes(scope.row.status)"
-            @click="updateStatus(scope.$index, scope.row)"
-            >อัพเดทสถานะ</el-button
+            v-if="scope.row.status == 'waitPayment'"
+            @click="updatePayment(scope.row)"
+            >ยืนยันการชำระเงิน</el-button
           >
         </template>
       </el-table-column>
     </el-table>
+    <el-dialog
+      title="ส่งหลักฐาน"
+      :visible.sync="confirmPaymentDialog"
+      :modal-append-to-body="false"
+    >
+      <el-upload
+        action="#"
+        list-type="picture-card"
+        :auto-upload="false"
+        :on-change="onFileSelected"
+        :limit="1"
+        multiple
+      >
+        <i slot="default" class="el-icon-plus"></i>
+      </el-upload>
+      <el-button type="primary" @click="onSubmit">Create</el-button>
+    </el-dialog>
   </el-card>
 </template>
 
 <script>
 import orderStore from "@/store/v1/order.store";
+import paymentStore from "@/store/v1/payment.store";
+import axios from "axios";
 
 export default {
   data() {
@@ -59,10 +82,44 @@ export default {
         { text: "ยืนยันรายการ รอผ้ามาส่ง", value: "waitClothes" },
         { text: "รอดำเนินการ", value: "waitQuene" },
         { text: "ดำเนินการ", value: "inProcess" },
+        { text: "เสร็จสิ้น", value: "finish" },
       ],
+      user: JSON.parse(window.localStorage.getItem("authUser")),
+      confirmPaymentDialog: false,
+      form: {},
+      e_slip: null,
+      url: null,
+      selectedRow: null,
     };
   },
   methods: {
+    async onSubmit() {
+      const fd = new FormData();
+      fd.append("image", this.e_slip, this.e_slip.name);
+      const img = await axios.post(
+        "http://127.0.0.1:8000/api/upload-image",
+        fd
+      );
+      const payment = await paymentStore.dispatch("save", {
+        image_id: img.data.id,
+        order_id: this.selectedRow.id,
+      });
+      this.selectedRow.status = "paid";
+      this.selectedRow.payment_id = payment.id;
+      const order = await orderStore.dispatch("update", this.selectedRow);
+      if (order) {
+        await this.$message({
+          type: "success",
+          message: "สำเร็จ",
+        });
+      } else {
+        await this.$message({
+          type: "info",
+          message: "ไม่สำเร็จ กรุณาตรวจสอบหลักฐานอีกครั้ง",
+        });
+      }
+      this.confirmPaymentDialog = false;
+    },
     async loadOrderData() {
       await orderStore.dispatch("get");
       this.orders = await orderStore.getters.list;
@@ -70,19 +127,13 @@ export default {
     filterStatus(value, row) {
       return row.status === value;
     },
-    async updateStatus(value, row) {
-      if (row.status == "waitPayment") {
-        row.status = "paid";
-      } else if (row.status == "paid") {
-        row.status = "waitClothes";
-      } else if (row.status == "waitClothes") {
-        row.status = "waitQuene";
-      } else if (row.status == "waitQuene") {
-        row.status = "inProcess";
-      } else if (row.status == "inProcess") {
-        row.status = "finish";
-      }
-      await orderStore.dispatch("update", row);
+    updatePayment(row) {
+      this.confirmPaymentDialog = true;
+      this.selectedRow = row;
+    },
+    onFileSelected(file, fileList) {
+      this.e_slip = file.raw;
+      this.url = URL.createObjectURL(file.raw);
     },
   },
   created() {

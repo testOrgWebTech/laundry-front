@@ -8,7 +8,7 @@
             <span class="username">Username or Email</span>
             <el-input
               placeholder="Username"
-              v-model="form.username"
+              v-model="username"
               style="margin-top: 10px"
             />
           </div>
@@ -17,15 +17,19 @@
             <el-input
               placeholder="Password"
               type="password"
-              v-model="form.password"
+              v-model="password"
               style="margin-top: 10px"
             />
           </div>
         </div>
         <div class="loginBtn">
-          <el-button type="primary" :plain="true"
+          <el-button type="primary" :plain="true" @click="login"
             >Login</el-button
           >
+          <el-button type="primary" :plain="true" @click="$router.push('/register')"
+            >Register</el-button
+          >
+          <span class="register"></span>
         </div>
       </div>
     </el-card>
@@ -33,49 +37,36 @@
 </template>
 
 <script>
-//import AuthUser from "@/store/AuthUser";
-import address from '../store/v1/address.store'
+import authStore from "@/store/auth.store";
 
 export default {
   data() {
     return {
       users: [],
-      form: {
-        username: "",
-        password: "",
-        role: "",
-      },
+      username: "",
+      password: "",
     };
   },
   methods: {
-    /*async fetchAccount() {
-      //await AccountStore.dispatch("fetch");
-     // this.users = Auth.getters.account;
-    },
     async login() {
       let payload = {
-        identifier: this.form.username,
-        password: this.form.password,
+        username: this.username,
+        password: this.password,
       };
-      let res = await AuthUser.dispatch("login", payload)
-      if (res.success) {
-          await this.$message({
-            message: 'เข้าสู่ระบบสำเร็จ',
-            type: 'success'
-          });
-          this.$router.push("/home")
+      let res = await authStore.dispatch("login", payload);
+      console.log(res);
+      if (res.data) {
+        await this.$message({
+          message: "เข้าสู่ระบบสำเร็จ",
+          type: "success",
+        });
+        this.$router.push("/home");
       } else {
-          this.$message.error('ชื่อผู้เข้าใช้หรือรหัสผ่านไม่ถูกต้อง');
-          
-          
+        this.$message.error("ชื่อผู้เข้าใช้หรือรหัสผ่านไม่ถูกต้อง");
       }
-    },*/
+    },
   },
-  async created() {
-    await address.dispatch('get');
-    const res = await address.getters.list;
-    console.log(res)
-  }
+  async created() {},
 };
 </script>
 
@@ -98,9 +89,9 @@ export default {
   background-position-x: -20%;
 }
 .loginBtn {
-  position: fixed;
-  margin-top: 350px;
-  margin-left: 485px;
+  position: absolute;
+  margin-top: 43%;
+  margin-left: 55%;
   z-index: 1;
 }
 #login {
