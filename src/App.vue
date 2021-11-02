@@ -29,7 +29,7 @@ export default {
 }*/
 
 html, body {
-  background: #79e5cb;
+  background: #eceaea;
   width: 100%;
   height: 100%;
 }

@@ -4,22 +4,28 @@
       :data="
         orders.filter(
           (data) =>
-            (!search || data.id.includes(search)) && data.user_id == user.id
+            (!search || data.id.toString().includes(search)) &&
+            data.user_id == user.id
         )
       "
       style="width: 100%"
       v-if="orders"
       ref="filterTable"
     >
-      <el-table-column label="รหัสรายการ" prop="id"> </el-table-column>
-      <el-table-column label="รหัสลูกค้า" prop="user_id"> </el-table-column>
-      <el-table-column label="ราคา" prop="price"> </el-table-column>
-      <el-table-column label="เวลาที่อัพเดท" prop="updated_at">
+      <el-table-column label="รหัสรายการ" prop="id" width="120">
+      </el-table-column>
+      <el-table-column label="รหัสลูกค้า" prop="user_id" width="120">
+      </el-table-column>
+      <el-table-column label="ราคา" prop="price" width="80"> </el-table-column>
+      <el-table-column
+        label="เวลาที่อัพเดท"
+        prop="updated_at"
+        :formatter="dateFormatter"
+      >
       </el-table-column>
       <el-table-column
         prop="status"
         label="สถานะ"
-        width="100"
         :filters="status"
         :filter-method="filterStatus"
         filter-placement="bottom-end"
@@ -28,13 +34,13 @@
           <el-tag
             :type="scope.row.status === 'finish' ? 'success' : 'primary'"
             disable-transitions
-            >{{ scope.row.status }}</el-tag
+            >{{ status.find((x) => x.value == scope.row.status).text }}</el-tag
           >
         </template></el-table-column
       >
       <el-table-column align="right">
-        <template slot="header">
-          <el-input v-model="search" size="mini" placeholder="ค้นหาด้วย ID" />
+        <template slot-scope="scope" slot="header">
+          <el-input v-model="search" placeholder="ค้นหาด้วยรหัสรายการ" />
         </template>
         <template slot-scope="scope">
           <el-button
@@ -51,7 +57,7 @@
       :visible.sync="confirmPaymentDialog"
       :modal-append-to-body="false"
     >
-      <el-upload
+      <!--<el-upload
         action="#"
         list-type="picture-card"
         :auto-upload="false"
@@ -60,8 +66,27 @@
         multiple
       >
         <i slot="default" class="el-icon-plus"></i>
-      </el-upload>
-      <el-button type="primary" @click="onSubmit">Create</el-button>
+      </el-upload>-->
+
+      <el-form ref="form" :model="form" label-width="120px" style="margin: 2%">
+        <el-form-item label="อัพโหลดสลิป">
+          <el-upload
+            ref="upload"
+            :action="'#'"
+            :auto-upload="false"
+            :on-change="onFileSelected"
+            :limit="1"
+            :on-exceed="handleExceed"
+          >
+            <el-button slot="trigger" size="small" type="primary"
+              >อัพโหลดสลิป</el-button
+            >
+          </el-upload>
+        </el-form-item>
+        <el-form-item style="margin-left: 70%; margin-top: 3%">
+          <el-button type="primary" @click="onSubmit">Submit</el-button>
+        </el-form-item>
+      </el-form>
     </el-dialog>
   </el-card>
 </template>
@@ -82,13 +107,14 @@ export default {
         { text: "ยืนยันรายการ รอผ้ามาส่ง", value: "waitClothes" },
         { text: "รอดำเนินการ", value: "waitQuene" },
         { text: "ดำเนินการ", value: "inProcess" },
-        { text: "เสร็จสิ้น", value: "finish" },
+        { text: "การซักผ้าเสร็จสิ้น", value: "washFinish" },
+        { text: "อยู่ระหว่างการจัดส่ง", value: "inShipmentProcess" },
+        { text: "สำเร็จ", value: "finish" },
       ],
       user: JSON.parse(window.localStorage.getItem("authUser")),
       confirmPaymentDialog: false,
       form: {},
       e_slip: null,
-      url: null,
       selectedRow: null,
     };
   },
@@ -112,6 +138,7 @@ export default {
           type: "success",
           message: "สำเร็จ",
         });
+        this.clearForm();
       } else {
         await this.$message({
           type: "info",
@@ -134,6 +161,15 @@ export default {
     onFileSelected(file, fileList) {
       this.e_slip = file.raw;
       this.url = URL.createObjectURL(file.raw);
+    },
+    dateFormatter(row) {
+      return new Date(row.updated_at).toLocaleString("th-TH");
+    },
+    clearForm() {
+      this.$refs.upload.clearFiles();
+    },
+    handleExceed(files, fileList) {
+      this.$message.warning("อัพโหลดได้เพียง 1 ไฟล์เท่านั้น");
     },
   },
   created() {

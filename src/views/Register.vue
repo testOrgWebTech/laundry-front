@@ -1,13 +1,14 @@
 <template>
   <el-card class="box-register">
+    <span class="title" style="margin-left: 43%">สมัครสมาชิก</span>
     <el-form ref="form" :model="form" label-width="120px" style="margin: 2%">
       <!--user info-->
       <el-card>
-        <el-form-item label="ชื่อผู้ใช้">
-          <el-input v-model="form.username" placeholder="ชื่อผู้ใช้"></el-input>
-        </el-form-item>
         <el-form-item label="อีเมล">
           <el-input v-model="form.email" placeholder="อีเมล"></el-input>
+        </el-form-item>
+        <el-form-item label="ชื่อผู้ใช้">
+          <el-input v-model="form.username" placeholder="ชื่อผู้ใช้"></el-input>
         </el-form-item>
         <el-form-item label="รหัสผ่าน">
           <el-input
@@ -72,13 +73,13 @@ export default {
   data() {
     return {
       form: {
-        role: 'customer',
         username: null,
         password: null,
         confirm_password: null,
         email: null,
         first_name: null,
         last_name: null,
+        tel: null,
         province: null,
         district: null,
         postal: null,
@@ -90,39 +91,43 @@ export default {
   methods: {
     async onSubmit() {
       if (Object.values(this.form).every((x) => x !== null)) {
-        this.$confirm("ยืนยัน", {
-          confirmButtonText: "ตกลง",
-          cancelButtonText: "ยกเลิก",
-          type: "warning",
-        })
-          .then(async () => {
-            const res = await userStore.dispatch("save", this.form);
-            if (res.data == "usernameExist") {
-              this.$alert("ชื่อผู้ใช้ซ้ำ", {
-                confirmButtonText: "OK",
-              });
-            } else if (res.data == "emailExist") {
-              this.$alert("อีเมลซ้ำ", {
-                confirmButtonText: "OK",
-              });
-            } else if (this.form.password != this.form.confirm_password) {
-              this.$alert("รหัสผ่านไม่ตรงกัน", {
-                confirmButtonText: "OK",
-              });
-            } else {
-              this.$message({
-                type: "success",
-                message: "สำเร็จ",
-              });
-              this.$router.push(`/`);
-            }
-          })
-          .catch(() => {
-            this.$message({
-              type: "info",
-              message: "ยกเลิก",
-            });
+        if (this.form.password != this.form.confirm_password) {
+          this.$alert("รหัสผ่านไม่ตรงกัน", {
+            confirmButtonText: "OK",
           });
+        } else {
+          this.$confirm("ยืนยัน", {
+            confirmButtonText: "ตกลง",
+            cancelButtonText: "ยกเลิก",
+            type: "warning",
+          })
+            .then(async () => {
+              this.form["role"] = "customer";
+              const res = await userStore.dispatch("save", this.form);
+              if (res.data == "usernameExist") {
+                this.$alert("ชื่อผู้ใช้ซ้ำ", {
+                  confirmButtonText: "OK",
+                });
+              } else if (res.data == "emailExist") {
+                this.$alert("อีเมลซ้ำ", {
+                  confirmButtonText: "OK",
+                });
+              } else {
+                this.$message({
+                  type: "success",
+                  message: "สำเร็จ",
+                });
+                this.$router.push(`/`);
+              }
+            })
+            .catch((e) => {
+              console.log(e)
+              this.$message({
+                type: "info",
+                message: "ยกเลิก",
+              });
+            });
+        }
       } else {
         this.$alert("กรุณากรอกข้อมูลให้ครบถ้วน", {
           confirmButtonText: "OK",

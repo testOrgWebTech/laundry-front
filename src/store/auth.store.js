@@ -15,8 +15,8 @@ export default new Vuex.Store({
     },
     actions: {
         async login({ commit }, payload) {
-            const res = await axios.post(apiUrl + '/login', payload)
-            commit('login', res)
+            const res = await axios.post(apiUrl + '/login', payload);
+            commit('login', res);
             return res;
         },
         logout({ commit }) {

@@ -5,10 +5,10 @@
         <div id="login-form">
           <h2 class="text-1">เข้าสู่ระบบ</h2>
           <div style="margin-top: 15px">
-            <span class="username">Username or Email</span>
+            <span class="username">Email</span>
             <el-input
-              placeholder="Username"
-              v-model="username"
+              placeholder="Email"
+              v-model="email"
               style="margin-top: 10px"
             />
           </div>
@@ -43,18 +43,17 @@ export default {
   data() {
     return {
       users: [],
-      username: "",
+      email: "",
       password: "",
     };
   },
   methods: {
     async login() {
       let payload = {
-        username: this.username,
+        email: this.email,
         password: this.password,
       };
       let res = await authStore.dispatch("login", payload);
-      console.log(res);
       if (res.data) {
         await this.$message({
           message: "เข้าสู่ระบบสำเร็จ",
@@ -83,7 +82,7 @@ export default {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-image: url(../assets/stationary.jpg);
+  background-image: url(../assets/1112.jpg);
   background-size: 55% 100%;
   background-repeat: no-repeat;
   background-position-x: -20%;

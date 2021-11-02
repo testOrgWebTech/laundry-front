@@ -3,10 +3,12 @@
 </template>
 
 <script>
+import orderStore from "@/store/v1/order.store";
 
 export default {
   name: 'Home',
-  components: {
+  async created() {
+    await orderStore.dispatch("get");
   }
 }
 </script>

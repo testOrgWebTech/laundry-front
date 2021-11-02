@@ -4,14 +4,14 @@
       :data="
         customers.filter(
           (data) =>
-            (!search || data.id.includes(search)) && data.role == 'customer'
+            (!search || data.id.toString().includes(search)) && data.role == 'customer'
         )
       "
       style="width: 100%"
       v-if="customers"
     >
       <template>
-        <el-table-column label="รหัสลูกค้า" prop="id"> </el-table-column>
+        <el-table-column label="ID" prop="id"> </el-table-column>
         <el-table-column label="ชื่อ" prop="first_name"> </el-table-column>
         <el-table-column label="นามสกุล" prop="last_name"> </el-table-column>
         <el-table-column align="right">

@@ -4,23 +4,30 @@
       :data="
         orders.filter(
           (data) =>
-            (!search || data.id.includes(search)) && data.status == 'finish'
+            (!search || data.id.toString().includes(search)) &&
+            data.status == 'finish'
         )
       "
       style="width: 100%"
       v-if="orders"
       ref="filterTable"
     >
-      <el-table-column label="รหัสรายการ" prop="id"> </el-table-column>
-      <el-table-column label="รหัสลูกค้า" prop="user_id"> </el-table-column>
-      <el-table-column label="ชื่อลูกค้า" prop="user.first_name">
+      <el-table-column label="รหัสรายการ" prop="id" width="120">
       </el-table-column>
-      <el-table-column label="เวลาที่เสร็จสิ้น" prop="finish_time">
+      <el-table-column label="รหัสลูกค้า" prop="user_id" width="120">
       </el-table-column>
-      <el-table-column label="ราคา" prop="price"> </el-table-column>
+      <el-table-column label="ชื่อลูกค้า" prop="user.first_name" width="150">
+      </el-table-column>
+      <el-table-column
+        label="เวลาที่เสร็จสิ้น"
+        prop="updated_time"
+        :formatter="dateFormatter"
+      >
+      </el-table-column>
+      <el-table-column label="ราคา" prop="price" width="80"> </el-table-column>
       <el-table-column align="right">
-        <template slot="header">
-          <el-input v-model="search" size="mini" placeholder="ค้นหาด้วย ID" />
+        <template slot-scope="scope" slot="header">
+          <el-input v-model="search" placeholder="ค้นหาด้วยรหัสรายการ" />
         </template>
       </el-table-column>
     </el-table>
@@ -41,7 +48,9 @@ export default {
         { text: "ยืนยันรายการ รอผ้ามาส่ง", value: "waitClothes" },
         { text: "รอดำเนินการ", value: "waitQuene" },
         { text: "ดำเนินการ", value: "inProcess" },
-        { text: "เสร็จสิ้น", value: "finish" },
+        { text: "การซักผ้าเสร็จสิ้น", value: "washFinish" },
+        { text: "อยู่ระหว่างการจัดส่ง", value: "inShipmentProcess" },
+        { text: "สำเร็จ", value: "finish" },
       ],
     };
   },
@@ -66,6 +75,9 @@ export default {
         row.status = "finish";
       }
       await orderStore.dispatch("update", row);
+    },
+    dateFormatter(row) {
+      return new Date(row.updated_at).toLocaleString("th-TH");
     },
   },
   created() {

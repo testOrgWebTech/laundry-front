@@ -1,20 +1,35 @@
 <template>
   <el-card class="box-content">
     <el-table
-      :data="orders.filter((data) => (!search || data.id.includes(search)) && data.status != 'finish')"
+      :data="
+        orders.filter(
+          (data) =>
+            (!search || data.id.toString().includes(search)) &&
+            data.status != 'finish'
+        )
+      "
       style="width: 100%"
       v-if="orders"
       ref="filterTable"
     >
-      <el-table-column label="รหัสรายการ" prop="id"> </el-table-column>
-      <el-table-column label="รหัสลูกค้า" prop="user_id"> </el-table-column>
-      <el-table-column label="ราคา" prop="price"> </el-table-column>
-      <el-table-column label="เวลาที่อัพเดท" prop="updated_at">
+      <el-table-column label="รหัสรายการ" prop="id" width="120">
+      </el-table-column>
+      <el-table-column label="รหัสลูกค้า" prop="user_id" width="120">
+      </el-table-column>
+      <el-table-column label="ชื่อลูกค้า" prop="user.first_name" width="130">
+      </el-table-column>
+      <el-table-column label="ราคา" prop="price" width="80"> </el-table-column>
+      <el-table-column
+        label="เวลาที่อัพเดท"
+        prop="updated_at"
+        :formatter="dateFormatter"
+        width="150"
+      >
       </el-table-column>
       <el-table-column
         prop="status"
         label="สถานะ"
-        width="100"
+        width="200"
         :filters="status"
         :filter-method="filterStatus"
         filter-placement="bottom-end"
@@ -23,25 +38,63 @@
           <el-tag
             :type="scope.row.status === 'finish' ? 'success' : 'primary'"
             disable-transitions
-            >{{ scope.row.status }}</el-tag
+            >{{ status.find((x) => x.value == scope.row.status).text }}</el-tag
           >
         </template></el-table-column
       >
       <el-table-column align="right">
-        <template slot="header">
-          <el-input v-model="search" size="mini" placeholder="ค้นหาด้วย ID" />
+        <template slot-scope="scope" slot="header">
+          <el-input v-model="search" placeholder="ค้นหาด้วย ID" />
         </template>
         <template slot-scope="scope">
           <el-button size="mini">ดูข้อมูล</el-button>
           <el-button
             size="mini"
             v-if="!['waitPayment', 'finish'].includes(scope.row.status)"
-            @click="updateStatus(scope.$index, scope.row)"
+            @click="onClickUpdate(scope.row)"
             >อัพเดทสถานะ</el-button
           >
         </template>
       </el-table-column>
     </el-table>
+    <el-dialog
+      title="ตรวจสอบการอัพเดทสถานะ"
+      :visible.sync="updateStatusDialog"
+      :modal-append-to-body="false"
+    >
+      <el-form
+        ref="form"
+        :model="form"
+        label-width="120px"
+        style="margin: 2%"
+        v-if="selectedRow"
+      >
+        <el-form-item label="ค่าบริการทั้งหมด">
+          <el-input disabled :value="selectedRow.price"></el-input>
+        </el-form-item>
+        <el-form-item label="วันเวลาที่ได้รับผ้า">
+          <el-input
+            disabled
+            :value="selectedRow.expected_finish_time"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="สลิปการจ่ายเงิน">
+          <img
+            :src="`http://localhost:8000${selectedRow.payment.image.path}`"
+            id="slip"
+            class="slip_image"
+            style="width: 100%"
+          />
+        </el-form-item>
+
+        <!--button-->
+        <el-form-item style="margin-left: 70%; margin-top: 3%">
+          <el-button type="primary" @click="onSubmitCheckPayment"
+            >Submit</el-button
+          >
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -59,7 +112,13 @@ export default {
         { text: "ยืนยันรายการ รอผ้ามาส่ง", value: "waitClothes" },
         { text: "รอดำเนินการ", value: "waitQuene" },
         { text: "ดำเนินการ", value: "inProcess" },
+        { text: "การซักผ้าเสร็จสิ้น", value: "washFinish" },
+        { text: "อยู่ระหว่างการจัดส่ง", value: "inShipmentProcess" },
+        { text: "สำเร็จ", value: "finish" },
       ],
+      updateStatusDialog: false,
+      selectedRow: null,
+      form: {},
     };
   },
   methods: {
@@ -70,7 +129,7 @@ export default {
     filterStatus(value, row) {
       return row.status === value;
     },
-    async updateStatus(value, row) {
+    async updateStatus(row) {
       if (row.status == "waitPayment") {
         row.status = "paid";
       } else if (row.status == "paid") {
@@ -79,10 +138,72 @@ export default {
         row.status = "waitQuene";
       } else if (row.status == "waitQuene") {
         row.status = "inProcess";
-      } else if (row.status == "inProcess") {
+      } else if (row.status == "inProcess" && row.shipment) {
+        row.status = "finish";
+      } else if (row.status == "inProcess" && !row.shipment) {
+        row.status = "washFinish";
+      } else if (row.status == "washFinish") {
+        row.status = "inShipmentProcess";
+      } else if (row.status == "inShipmentProcess") {
         row.status = "finish";
       }
       await orderStore.dispatch("update", row);
+    },
+    async onClickUpdate(row) {
+      this.selectedRow = row;
+      if (row.status == "paid") {
+        this.updateStatusDialog = true;
+      } else {
+        this.$confirm("ยืนยัน", {
+          confirmButtonText: "ตกลง",
+          cancelButtonText: "ยกเลิก",
+          type: "warning",
+        })
+          .then(async () => {
+            this.updateStatus(this.selectedRow);
+            await this.$message({
+              type: "success",
+              message: "สำเร็จ",
+            });
+          })
+          .catch((e) => {
+            console.log(e);
+            this.$message({
+              type: "info",
+              message: "ยกเลิก",
+            });
+          });
+      }
+    },
+    onSubmitCheckPayment() {
+      this.$confirm("ยืนยัน", {
+        confirmButtonText: "ตกลง",
+        cancelButtonText: "ยกเลิก",
+        type: "warning",
+      })
+        .then(async () => {
+          this.updateStatus(this.selectedRow);
+          await this.$message({
+            type: "success",
+            message: "สำเร็จ",
+          });
+          this.updateStatusDialog = false;
+          //this.clearForm();
+        })
+        .catch(async (e) => {
+          console.log(e);
+          await this.$message({
+            type: "info",
+            message: "ยกเลิก",
+          });
+          this.updateStatusDialog = false;
+        });
+    },
+    clearForm() {
+      this.form = {};
+    },
+    dateFormatter(row) {
+      return new Date(row.updated_at).toLocaleString("th-TH");
     },
   },
   created() {

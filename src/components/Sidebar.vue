@@ -50,7 +50,7 @@
         <span slot="title">รายการซักผ้า</span>
       </el-menu-item>
 
-      <el-menu-item index="4" @click="logout">
+      <el-menu-item index="6" @click="logout">
         <i class="el-icon-switch-button" style="color: black"></i>
         <span slot="title">ออกจากระบบ</span>
       </el-menu-item>
