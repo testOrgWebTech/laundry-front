@@ -43,11 +43,20 @@
           <el-input v-model="search" placeholder="ค้นหาด้วยรหัสรายการ" />
         </template>
         <template slot-scope="scope">
+          <el-button size="mini" @click="handleInfo(scope.row)"
+            >ดูข้อมูล</el-button
+          >
           <el-button
             size="mini"
             v-if="scope.row.status == 'waitPayment'"
             @click="updatePayment(scope.row)"
             >ยืนยันการชำระเงิน</el-button
+          >
+          <el-button
+            size="mini"
+            v-if="scope.row.status == 'inShipmentProcess'"
+            @click="onClickUpdate(scope.row)"
+            >อัพเดทสถานะ</el-button
           >
         </template>
       </el-table-column>
@@ -57,17 +66,6 @@
       :visible.sync="confirmPaymentDialog"
       :modal-append-to-body="false"
     >
-      <!--<el-upload
-        action="#"
-        list-type="picture-card"
-        :auto-upload="false"
-        :on-change="onFileSelected"
-        :limit="1"
-        multiple
-      >
-        <i slot="default" class="el-icon-plus"></i>
-      </el-upload>-->
-
       <el-form ref="form" :model="form" label-width="120px" style="margin: 2%">
         <el-form-item label="อัพโหลดสลิป">
           <el-upload
@@ -86,6 +84,54 @@
         <el-form-item style="margin-left: 70%; margin-top: 3%">
           <el-button type="primary" @click="onSubmit">Submit</el-button>
         </el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-dialog
+      title="ข้อมูลรายการ"
+      :visible.sync="infoDialog"
+      :modal-append-to-body="false"
+    >
+      <el-form
+        ref="form"
+        :model="form"
+        label-width="120px"
+        style="margin: 2%"
+        v-if="selectedRow"
+      >
+        <el-form-item label="รหัสรายการ">
+          <el-input disabled :value="selectedRow.id"></el-input>
+        </el-form-item>
+        <el-form-item label="รหัสลูกค้า">
+          <el-input disabled :value="selectedRow.user_id"></el-input>
+        </el-form-item>
+        <el-form-item label="ชื่อลูกค้า">
+          <el-input disabled :value="selectedRow.user.first_name"></el-input>
+        </el-form-item>
+        <el-form-item label="นามสกุลลูกค้า">
+          <el-input disabled :value="selectedRow.user.last_name"></el-input>
+        </el-form-item>
+        <el-form-item label="ใช้บริการส่งผ้า">
+          <el-switch :value="selectedRow.shipment ? true : false"></el-switch>
+        </el-form-item>
+        <el-form-item label="รหัสส่งผ้า" v-if="selectedRow.shipment">
+          <el-input :value="selectedRow.shipment_id" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="ราคาทั้งหมด">
+          <el-input disabled :value="selectedRow.price"></el-input>
+        </el-form-item>
+        <el-form-item label="สถานะ">
+          <el-input
+            :value="status.find((x) => x.value == selectedRow.status).text"
+            disabled
+          ></el-input>
+        </el-form-item>
+
+        <!--button-->
+        <!--<el-form-item style="margin-left: 65%; margin-top: 3%">
+          <el-button type="primary" @click="onClickUpdate(selectedRow)"
+            >อัพเดทสถานะ</el-button
+          >
+        </el-form-item>-->
       </el-form>
     </el-dialog>
   </el-card>
@@ -116,36 +162,44 @@ export default {
       form: {},
       e_slip: null,
       selectedRow: null,
+      infoDialog: false,
     };
   },
   methods: {
     async onSubmit() {
-      const fd = new FormData();
-      fd.append("image", this.e_slip, this.e_slip.name);
-      const img = await axios.post(
-        "http://127.0.0.1:8000/api/upload-image",
-        fd
-      );
-      const payment = await paymentStore.dispatch("save", {
-        image_id: img.data.id,
-        order_id: this.selectedRow.id,
-      });
-      this.selectedRow.status = "paid";
-      this.selectedRow.payment_id = payment.id;
-      const order = await orderStore.dispatch("update", this.selectedRow);
-      if (order) {
-        await this.$message({
-          type: "success",
-          message: "สำเร็จ",
+      if (this.e_slip) {
+        const fd = new FormData();
+        fd.append("image", this.e_slip, this.e_slip.name);
+        const img = await axios.post(
+          "http://127.0.0.1:8000/api/upload-image",
+          fd
+        );
+        const payment = await paymentStore.dispatch("save", {
+          image_id: img.data.id,
+          order_id: this.selectedRow.id,
         });
-        this.clearForm();
+        this.selectedRow.status = "paid";
+        this.selectedRow.payment_id = payment.id;
+        const order = await orderStore.dispatch("update", this.selectedRow);
+        if (order) {
+          await this.$message({
+            type: "success",
+            message: "สำเร็จ",
+          });
+          this.clearForm();
+        } else {
+          await this.$message({
+            type: "info",
+            message: "ไม่สำเร็จ กรุณาตรวจสอบหลักฐานอีกครั้ง",
+          });
+        }
+        this.confirmPaymentDialog = false;
       } else {
         await this.$message({
           type: "info",
-          message: "ไม่สำเร็จ กรุณาตรวจสอบหลักฐานอีกครั้ง",
+          message: "กรุณาแนบเอกสาร",
         });
       }
-      this.confirmPaymentDialog = false;
     },
     async loadOrderData() {
       await orderStore.dispatch("get");
@@ -170,6 +224,37 @@ export default {
     },
     handleExceed(files, fileList) {
       this.$message.warning("อัพโหลดได้เพียง 1 ไฟล์เท่านั้น");
+    },
+    handleInfo(row) {
+      this.selectedRow = row;
+      this.infoDialog = true;
+    },
+    async updateStatus(row) {
+      if (row.status == "inShipmentProcess") {
+        row.status = "finish";
+      }
+      await orderStore.dispatch("update", row);
+    },
+    async onClickUpdate(row) {
+      this.selectedRow = row;
+      this.$confirm("ยืนยัน", {
+        confirmButtonText: "ตกลง",
+        cancelButtonText: "ยกเลิก",
+        type: "warning",
+      })
+        .then(async () => {
+          this.updateStatus(this.selectedRow);
+          await this.$message({
+            type: "success",
+            message: "สำเร็จ",
+          });
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "ยกเลิก",
+          });
+        });
     },
   },
   created() {

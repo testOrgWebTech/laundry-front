@@ -12,11 +12,11 @@
       v-if="orders"
       ref="filterTable"
     >
-      <el-table-column label="รหัสรายการ" prop="id" width="120">
+      <el-table-column label="รหัสรายการ" prop="id" width="110">
       </el-table-column>
-      <el-table-column label="รหัสลูกค้า" prop="user_id" width="120">
+      <el-table-column label="รหัสลูกค้า" prop="user_id" width="110">
       </el-table-column>
-      <el-table-column label="ชื่อลูกค้า" prop="user.first_name" width="130">
+      <el-table-column label="ชื่อลูกค้า" prop="user.first_name" width="120">
       </el-table-column>
       <el-table-column label="ราคา" prop="price" width="80"> </el-table-column>
       <el-table-column
@@ -38,19 +38,22 @@
           <el-tag
             :type="scope.row.status === 'finish' ? 'success' : 'primary'"
             disable-transitions
+            v-if="status.find((x) => x.value == scope.row.status)"
             >{{ status.find((x) => x.value == scope.row.status).text }}</el-tag
           >
         </template></el-table-column
       >
       <el-table-column align="right">
         <template slot-scope="scope" slot="header">
-          <el-input v-model="search" placeholder="ค้นหาด้วย ID" />
+          <el-input v-model="search" placeholder="ค้นหาด้วยรหัสรายการ" />
         </template>
         <template slot-scope="scope">
-          <el-button size="mini">ดูข้อมูล</el-button>
+          <el-button size="mini" @click="handleInfo(scope.row)"
+            >ดูข้อมูล</el-button
+          >
           <el-button
             size="mini"
-            v-if="!['waitPayment', 'finish'].includes(scope.row.status)"
+            v-if="!['waitPayment', 'inShipmentProcess','finish'].includes(scope.row.status)"
             @click="onClickUpdate(scope.row)"
             >อัพเดทสถานะ</el-button
           >
@@ -67,7 +70,7 @@
         :model="form"
         label-width="120px"
         style="margin: 2%"
-        v-if="selectedRow"
+        v-if="selectedRow && selectedRow.payment"
       >
         <el-form-item label="ค่าบริการทั้งหมด">
           <el-input disabled :value="selectedRow.price"></el-input>
@@ -75,7 +78,7 @@
         <el-form-item label="วันเวลาที่ได้รับผ้า">
           <el-input
             disabled
-            :value="selectedRow.expected_finish_time"
+            :value="dateFormatter2(selectedRow.expected_finish_time)"
           ></el-input>
         </el-form-item>
         <el-form-item label="สลิปการจ่ายเงิน">
@@ -90,8 +93,49 @@
         <!--button-->
         <el-form-item style="margin-left: 70%; margin-top: 3%">
           <el-button type="primary" @click="onSubmitCheckPayment"
-            >Submit</el-button
+            >ยอมรับ</el-button
           >
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-dialog
+      title="ข้อมูลรายการ"
+      :visible.sync="infoDialog"
+      :modal-append-to-body="false"
+    >
+      <el-form
+        ref="form"
+        :model="form"
+        label-width="120px"
+        style="margin: 2%"
+        v-if="selectedRow"
+      >
+        <el-form-item label="รหัสรายการ">
+          <el-input disabled :value="selectedRow.id"></el-input>
+        </el-form-item>
+        <el-form-item label="รหัสลูกค้า">
+          <el-input disabled :value="selectedRow.user_id"></el-input>
+        </el-form-item>
+        <el-form-item label="ชื่อลูกค้า">
+          <el-input disabled :value="selectedRow.user.first_name"></el-input>
+        </el-form-item>
+        <el-form-item label="นามสกุลลูกค้า">
+          <el-input disabled :value="selectedRow.user.last_name"></el-input>
+        </el-form-item>
+        <el-form-item label="ใช้บริการส่งผ้า">
+          <el-switch :value="selectedRow.shipment ? true : false"></el-switch>
+        </el-form-item>
+        <el-form-item label="รหัสส่งผ้า" v-if="selectedRow.shipment">
+          <el-input :value="selectedRow.shipment_id" disabled></el-input>
+        </el-form-item>
+        <el-form-item label="ราคาทั้งหมด">
+          <el-input disabled :value="selectedRow.price"></el-input>
+        </el-form-item>
+        <el-form-item label="สถานะ">
+          <el-input
+            :value="status.find((x) => x.value == selectedRow.status).text"
+            disabled
+          ></el-input>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -114,9 +158,9 @@ export default {
         { text: "ดำเนินการ", value: "inProcess" },
         { text: "การซักผ้าเสร็จสิ้น", value: "washFinish" },
         { text: "อยู่ระหว่างการจัดส่ง", value: "inShipmentProcess" },
-        { text: "สำเร็จ", value: "finish" },
       ],
       updateStatusDialog: false,
+      infoDialog: false,
       selectedRow: null,
       form: {},
     };
@@ -144,8 +188,6 @@ export default {
         row.status = "washFinish";
       } else if (row.status == "washFinish") {
         row.status = "inShipmentProcess";
-      } else if (row.status == "inShipmentProcess") {
-        row.status = "finish";
       }
       await orderStore.dispatch("update", row);
     },
@@ -165,6 +207,7 @@ export default {
               type: "success",
               message: "สำเร็จ",
             });
+            this.clearForm();
           })
           .catch((e) => {
             console.log(e);
@@ -172,6 +215,7 @@ export default {
               type: "info",
               message: "ยกเลิก",
             });
+            this.clearForm();
           });
       }
     },
@@ -187,8 +231,7 @@ export default {
             type: "success",
             message: "สำเร็จ",
           });
-          this.updateStatusDialog = false;
-          //this.clearForm();
+          this.clearForm();
         })
         .catch(async (e) => {
           console.log(e);
@@ -196,14 +239,23 @@ export default {
             type: "info",
             message: "ยกเลิก",
           });
-          this.updateStatusDialog = false;
+          this.clearForm();
         });
     },
     clearForm() {
-      this.form = {};
+      this.updateStatusDialog = false;
+      this.infoDialog = false;
+      this.selectedRow = null;
     },
     dateFormatter(row) {
       return new Date(row.updated_at).toLocaleString("th-TH");
+    },
+    dateFormatter2(value) {
+      return new Date(value).toLocaleString("th-TH");
+    },
+    handleInfo(row) {
+      this.selectedRow = row;
+      this.infoDialog = true;
     },
   },
   created() {
