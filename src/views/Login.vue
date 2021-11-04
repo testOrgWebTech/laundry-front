@@ -56,7 +56,7 @@ export default {
       let res = await authStore.dispatch("login", payload);
       if (res.data) {
         await this.$message({
-          message: "เข้าสู่ระบบสำเร็จ",
+          message: "เข้าสู่ระบบสำเร็จ กรุณาเลือกรายการที่ต้องการดำเนินการทางด้านซ้ายมือ",
           type: "success",
         });
         this.$router.push("/home");

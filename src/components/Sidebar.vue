@@ -47,7 +47,7 @@
         v-if="user.role == 'customer'"
       >
         <i class="el-icon-document" style="color: black"></i>
-        <span slot="title">รายการซักผ้า</span>
+        <span slot="title">ดูรายการซักผ้าทั้งหมด</span>
       </el-menu-item>
 
       <el-menu-item index="6" @click="logout">

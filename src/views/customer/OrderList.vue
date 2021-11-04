@@ -113,8 +113,8 @@
         <el-form-item label="ใช้บริการส่งผ้า">
           <el-switch :value="selectedRow.shipment ? true : false"></el-switch>
         </el-form-item>
-        <el-form-item label="รหัสส่งผ้า" v-if="selectedRow.shipment">
-          <el-input :value="selectedRow.shipment_id" disabled></el-input>
+        <el-form-item label="เวลาส่งผ้า" v-if="selectedRow.shipment && selectedRow.status == 'inShipmentProcess'">
+          <el-input :value="selectedRow.updated_at" disabled></el-input>
         </el-form-item>
         <el-form-item label="ราคาทั้งหมด">
           <el-input disabled :value="selectedRow.price"></el-input>
@@ -184,7 +184,7 @@ export default {
         if (order) {
           await this.$message({
             type: "success",
-            message: "สำเร็จ",
+            message: "สำเร็จ กรุณารอทางร้านยืนยันรายการ",
           });
           this.clearForm();
         } else {

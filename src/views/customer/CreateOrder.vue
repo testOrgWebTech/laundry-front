@@ -90,7 +90,7 @@ export default {
           await orderStore.dispatch("save", this.form);
           await this.$message({
             type: "success",
-            message: "สำเร็จ",
+            message: "สำเร็จ กรุณาส่งหลักฐานการชำระเงินในหน้ารายการซักผ้า",
           });
           this.confirmDialog = false;
           this.clearForm();
